@@ -1,25 +1,33 @@
 import React, { useState } from 'react';
 
 export default function App() {
-  // 1. ESTADO PARA LA MESA SELECCIONADA
   const [mesaSeleccionada, setMesaSeleccionada] = useState(null);
-  
-  // 2. ESTADO DE LOS PEDIDOS (Individual por cada mesa)
+  const [categoriaActual, setCategoriaActual] = useState('bebidas'); // Categoría por defecto
   const [pedidosPorMesa, setPedidosPorMesa] = useState({
     1: [], 2: [], 3: [], 4: [], 5: [], 6: []
   });
 
-  // 3. MENÚ DE PRODUCTOS
-  const menu = [
-    { id: 1, nombre: 'Cerveza Caña', precio: 2.5, zona: 'barra' },
-    { id: 2, nombre: 'Ración Bravas', precio: 6.5, zona: 'cocina' },
-    { id: 3, nombre: 'Hamburguesa', precio: 12.0, zona: 'cocina' },
-    { id: 4, nombre: 'Copa de Vino', precio: 3.5, zona: 'barra' },
-    { id: 5, nombre: 'Refresco', precio: 2.8, zona: 'barra' },
-    { id: 6, nombre: 'Calamares', precio: 8.5, zona: 'cocina' }
-  ];
+  // MENÚ ORGANIZADO POR CATEGORÍAS
+  const menu = {
+    bebidas: [
+      { id: 1, nombre: 'Caña', precio: 2.5, zona: 'barra' },
+      { id: 2, nombre: 'Refresco', precio: 2.8, zona: 'barra' },
+      { id: 3, nombre: 'Vino', precio: 3.5, zona: 'barra' },
+      { id: 4, nombre: 'Agua', precio: 2.0, zona: 'barra' }
+    ],
+    comida: [
+      { id: 5, nombre: 'Bravas', precio: 6.5, zona: 'cocina' },
+      { id: 6, nombre: 'Hamburguesa', precio: 12.0, zona: 'cocina' },
+      { id: 7, nombre: 'Calamares', precio: 9.0, zona: 'cocina' },
+      { id: 8, nombre: 'Croquetas', precio: 8.0, zona: 'cocina' }
+    ],
+    copas: [
+      { id: 9, nombre: 'Gin Tonic', precio: 8.0, zona: 'barra' },
+      { id: 10, nombre: 'Ron Cola', precio: 8.0, zona: 'barra' },
+      { id: 11, nombre: 'Café', precio: 1.5, zona: 'barra' }
+    ]
+  };
 
-  // 4. FUNCIONES DE LÓGICA
   const añadirItem = (producto) => {
     setPedidosPorMesa(prev => ({
       ...prev,
@@ -29,11 +37,92 @@ export default function App() {
 
   const eliminarUltimo = () => {
     setPedidosPorMesa(prev => {
-      const nuevoPedido = [...prev[mesaSeleccionada]];
-      nuevoPedido.pop();
-      return { ...prev, [mesaSeleccionada]: nuevoPedido };
+      const nuevo = [...prev[mesaSeleccionada]];
+      nuevo.pop();
+      return { ...prev, [mesaSeleccionada]: nuevo };
     });
   };
+
+  const enviarCocina = () => {
+    const soloCocina = pedidosPorMesa[mesaSeleccionada].filter(p => p.zona === 'cocina');
+    if (soloCocina.length === 0) return alert("Nada para cocina");
+    alert(`🔥 COMANDA COCINA MESA ${mesaSeleccionada}:\n${soloCocina.map(p => p.nombre).join('\n')}`);
+  };
+
+  const cobrarMesa = () => {
+    const pedido = pedidosPorMesa[mesaSeleccionada];
+    const total = pedido.reduce((a, b) => a + b.precio, 0);
+    if (total === 0) return;
+    alert(`🧾 TICKET MESA ${mesaSeleccionada}\nTOTAL: ${total.toFixed(2)}€`);
+    setPedidosPorMesa(prev => ({ ...prev, [mesaSeleccionada]: [] }));
+    setMesaSeleccionada(null);
+  };
+
+  return (
+    <div style={{ padding: '10px', fontFamily: 'sans-serif', maxWidth: '500px', margin: 'auto', backgroundColor: '#f4f4f9', minHeight: '100vh' }}>
+      <h1 style={{ textAlign: 'center', fontSize: '1.4rem', color: '#333' }}>🍻 Bar TPV Pro</h1>
+
+      {!mesaSeleccionada ? (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginTop: '20px' }}>
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+            <button key={n} onClick={() => setMesaSeleccionada(n)} style={{
+              padding: '25px 5px', borderRadius: '10px', border: 'none', fontWeight: 'bold',
+              backgroundColor: pedidosPorMesa[n]?.length > 0 ? '#ffca28' : '#fff',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              Mesa {n} {pedidosPorMesa[n]?.length > 0 && '⏳'}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div>
+          <button onClick={() => setMesaSeleccionada(null)} style={{ marginBottom: '10px', padding: '10px', width: '100%' }}>⬅ Volver al Plano</button>
+          
+          {/* BOTONES DE CATEGORÍAS */}
+          <div style={{ display: 'flex', gap: '5px', marginBottom: '15px' }}>
+            {['bebidas', 'comida', 'copas'].map(cat => (
+              <button 
+                key={cat} 
+                onClick={() => setCategoriaActual(cat)}
+                style={{
+                  flex: 1, padding: '12px 5px', borderRadius: '5px', border: 'none', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '0.7rem',
+                  backgroundColor: categoriaActual === cat ? '#333' : '#ddd',
+                  color: categoriaActual === cat ? '#fff' : '#333'
+                }}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          {/* PRODUCTOS DE LA CATEGORÍA */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            {menu[categoriaActual].map(item => (
+              <button key={item.id} onClick={() => añadirItem(item)} style={{ padding: '15px 5px', borderRadius: '8px', border: '1px solid #ccc', backgroundColor: '#fff' }}>
+                {item.nombre}<br/><b>{item.precio}€</b>
+              </button>
+            ))}
+          </div>
+
+          {/* RESUMEN Y ACCIONES */}
+          <div style={{ marginTop: '20px', backgroundColor: '#fff', padding: '15px', borderRadius: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <b>Pedido Mesa {mesaSeleccionada}</b>
+              <button onClick={eliminarUltimo} style={{ color: 'red', border: 'none', background: 'none' }}>✖ Borrar último</button>
+            </div>
+            <div style={{ height: '80px', overflowY: 'auto', fontSize: '0.9rem', margin: '10px 0' }}>
+              {pedidosPorMesa[mesaSeleccionada].map((p, i) => <span key={i}>{p.nombre}, </span>)}
+            </div>
+            <h3 style={{ textAlign: 'right' }}>Total: {pedidosPorMesa[mesaSeleccionada].reduce((a, b) => a + b.precio, 0).toFixed(2)}€</h3>
+            
+            <button onClick={enviarCocina} style={{ width: '100%', padding: '15px', backgroundColor: '#e74c3c', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', marginBottom: '10px' }}>ENVIAR A COCINA</button>
+            <button onClick={cobrarMesa} style={{ width: '100%', padding: '15px', backgroundColor: '#2ecc71', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold' }}>COBRAR TICKET</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
   const enviarCocina = () => {
     const pedidoActual = pedidosPorMesa[mesaSeleccionada];
